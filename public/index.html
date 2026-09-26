@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Baza & MongoDB Auth Tizimi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+                <div>
+                    <span class="brand-title">MongoDB Auth & Baza</span>
+                    <span class="brand-sub">Express.js + MongoDB Compass API</span>
+                </div>
+            </div>
+
+            <div class="nav-center">
+                <button class="nav-tab active" data-tab="login-tab">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Login
+                </button>
+                <button class="nav-tab" data-tab="users-tab">
+                    <i class="fa-solid fa-users"></i> Foydalanuvchilar Bazasi <span class="badge" id="badge-users-count">11</span>
+                </button>
+                <button class="nav-tab" data-tab="logs-tab">
+                    <i class="fa-solid fa-shield-halved"></i> MongoDB Compass Tarixi <span class="badge badge-accent" id="badge-logs-count">0</span>
+                </button>
+                <button class="nav-tab" data-tab="guide-tab">
+                    <i class="fa-solid fa-plug"></i> MongoDB Integratsiya
+                </button>
+            </div>
+
+            <div class="nav-right">
+                <div id="mongo-status-pill" class="status-pill status-warning" title="MongoDB holati">
+                    <span class="status-dot"></span>
+                    <span id="mongo-status-text">Tekshirilmoqda...</span>
+                </div>
+                <div id="user-header-pill" class="user-pill hidden">
+                    <div class="user-avatar-mini" id="header-avatar">A</div>
+                    <span class="user-name" id="header-username">ali_uz</span>
+                    <button id="header-logout-btn" class="logout-btn" title="Chiqish">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="main-container">
+
+        <!-- ================= TAB 1: LOGIN ================= -->
+        <section id="login-tab" class="tab-content active">
+            <div class="auth-grid">
+                
+                <!-- Login / Register Card -->
+                <div class="card auth-card">
+                    <div class="auth-mode-switch">
+                        <button type="button" id="tab-btn-login" class="auth-mode-btn active">
+                            <i class="fa-solid fa-arrow-right-to-bracket"></i> Tizimga Kirish
+                        </button>
+                        <button type="button" id="tab-btn-register" class="auth-mode-btn">
+                            <i class="fa-solid fa-user-plus"></i> Ro‘yxatdan O‘tish
+                        </button>
+                    </div>
+
+                    <div class="card-header" id="auth-card-header">
+                        <div class="icon-circle" id="auth-icon-circle">
+                            <i class="fa-solid fa-user-lock"></i>
+                        </div>
+                        <h2 id="auth-card-title">Tizimga Kirish</h2>
+                        <p class="subtitle" id="auth-card-subtitle">MongoDB Atlas bazasidagi hisobingiz orqali kiring. Har bir kirish MongoDB Compass'ga qayd etiladi.</p>
+                    </div>
+
+                    <div id="login-alert" class="alert hidden"></div>
+
+                    <!-- 1. LOGIN FORM -->
+                    <form id="login-form">
+                        <div class="form-group">
+                            <label for="login-username"><i class="fa-regular fa-user"></i> Username</label>
+                            <input type="text" id="login-username" placeholder="Masalan: ali_uz" required autocomplete="username">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="login-password"><i class="fa-solid fa-key"></i> Parol</label>
+                            <div class="password-input-wrapper">
+                                <input type="password" id="login-password" placeholder="Parolingizni kiriting" required autocomplete="current-password">
+                                <button type="button" id="toggle-password" class="toggle-pwd-btn">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="login-submit-btn" class="btn btn-primary btn-block">
+                            <span>Kirish</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <!-- 2. REGISTER FORM (MongoDB Atlas'ga yangi user qo'shadi) -->
+                    <form id="register-form" class="hidden">
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label for="reg-username"><i class="fa-regular fa-user"></i> Username *</label>
+                                <input type="text" id="reg-username" placeholder="Masalan: jasur_dev" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="reg-password"><i class="fa-solid fa-key"></i> Parol *</label>
+                                <input type="password" id="reg-password" placeholder="Kuchli parol yarating" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label for="reg-firstname"><i class="fa-solid fa-signature"></i> Ism *</label>
+                                <input type="text" id="reg-firstname" placeholder="Masalan: Jasur" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="reg-lastname"><i class="fa-solid fa-signature"></i> Familiya</label>
+                                <input type="text" id="reg-lastname" placeholder="Masalan: Rashidov">
+                            </div>
+                        </div>
+
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label for="reg-phone"><i class="fa-solid fa-phone"></i> Telefon</label>
+                                <input type="text" id="reg-phone" placeholder="+998 90 123 45 67">
+                            </div>
+                            <div class="form-group">
+                                <label for="reg-email"><i class="fa-solid fa-envelope"></i> Email</label>
+                                <input type="email" id="reg-email" placeholder="user@gmail.com">
+                            </div>
+                        </div>
+
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label for="reg-age"><i class="fa-solid fa-cake-candles"></i> Yoshi</label>
+                                <input type="number" id="reg-age" min="1" max="120" placeholder="24">
+                            </div>
+                            <div class="form-group">
+                                <label for="reg-gender"><i class="fa-solid fa-venus-mars"></i> Jinsi</label>
+                                <select id="reg-gender" class="filter-select" style="width: 100%; height: 44px;">
+                                    <option value="Erkak">Erkak</option>
+                                    <option value="Ayol">Ayol</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label for="reg-region"><i class="fa-solid fa-location-dot"></i> Viloyat / Shahar</label>
+                                <input type="text" id="reg-region" placeholder="Toshkent shahri">
+                            </div>
+                            <div class="form-group">
+                                <label for="reg-passport"><i class="fa-solid fa-passport"></i> Pasport (Seriya va raqam)</label>
+                                <input type="text" id="reg-passport" placeholder="AA 1234567">
+                            </div>
+                        </div>
+
+                        <button type="submit" id="reg-submit-btn" class="btn btn-primary btn-block">
+                            <i class="fa-solid fa-database"></i>
+                            <span>Ro‘yxatdan o‘tish (MongoDB Atlas'ga saqlash)</span>
+                        </button>
+                    </form>
+
+                    <!-- Quick Logins -->
+                    <div class="quick-login-section" id="quick-login-section">
+                        <div class="quick-login-title">
+                            <i class="fa-solid fa-bolt"></i> Tezkor sinov uchun (bosing):
+                        </div>
+                        <div class="quick-chips" id="quick-chips-container">
+                            <!-- JS dinamik qo'shadi -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logged-in / Profile Card -->
+                <div class="card profile-card" id="profile-card-section">
+                    <div class="profile-empty-state" id="profile-empty-state">
+                        <div class="empty-icon">
+                            <i class="fa-solid fa-id-card-clip"></i>
+                        </div>
+                        <h3>Hozircha tizimga kirmagansiz</h3>
+                        <p>Chapdagi forma orqali kiring yoki tezkor tugmalardan birini tanlang. Kirgach, pasport va to'liq ma'lumotlaringiz bu yerda ko'rinadi.</p>
+                    </div>
+
+                    <div class="profile-logged-in hidden" id="profile-logged-in">
+                        <div class="profile-header-banner">
+                            <div class="profile-avatar-large" id="prof-avatar">A</div>
+                            <div class="profile-main-meta">
+                                <h2 id="prof-fullname">Ali Valiyev</h2>
+                                <span class="profile-username" id="prof-username">@ali_uz</span>
+                                <span class="profile-badge"><i class="fa-solid fa-circle-check"></i> Faol Foydalanuvchi</span>
+                            </div>
+                        </div>
+
+                        <!-- Passport Style Card -->
+                        <div class="passport-box">
+                            <div class="passport-header">
+                                <span><i class="fa-solid fa-passport"></i> O‘ZBEKISTON RESPUBLIKASI PASPORTI</span>
+                                <span class="passport-seria" id="prof-passport-num">AA 0000000</span>
+                            </div>
+                            <div class="passport-body">
+                                <div class="passport-row">
+                                    <div class="p-item">
+                                        <span class="p-label">Otasining ismi:</span>
+                                        <span class="p-val" id="prof-middlename">-</span>
+                                    </div>
+                                    <div class="p-item">
+                                        <span class="p-label">Tug‘ilgan sana:</span>
+                                        <span class="p-val" id="prof-birthdate">-</span>
+                                    </div>
+                                    <div class="p-item">
+                                        <span class="p-label">Yoshi:</span>
+                                        <span class="p-val" id="prof-age">-</span>
+                                    </div>
+                                    <div class="p-item">
+                                        <span class="p-label">Jinsi:</span>
+                                        <span class="p-val" id="prof-gender">-</span>
+                                    </div>
+                                </div>
+                                <div class="passport-row">
+                                    <div class="p-item">
+                                        <span class="p-label">Kim tomonidan berilgan:</span>
+                                        <span class="p-val" id="prof-issuedby">-</span>
+                                    </div>
+                                    <div class="p-item">
+                                        <span class="p-label">Berilgan sana:</span>
+                                        <span class="p-val" id="prof-issueddate">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact & Address -->
+                        <div class="profile-details-grid">
+                            <div class="detail-card">
+                                <i class="fa-solid fa-phone"></i>
+                                <div>
+                                    <span class="det-label">Telefon</span>
+                                    <span class="det-val" id="prof-phone">-</span>
+                                </div>
+                            </div>
+                            <div class="detail-card">
+                                <i class="fa-solid fa-envelope"></i>
+                                <div>
+                                    <span class="det-label">Email</span>
+                                    <span class="det-val" id="prof-email">-</span>
+                                </div>
+                            </div>
+                            <div class="detail-card full-width">
+                                <i class="fa-solid fa-location-dot"></i>
+                                <div>
+                                    <span class="det-label">Yashash manzili</span>
+                                    <span class="det-val" id="prof-address">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- JWT Token Box -->
+                        <div class="token-box">
+                            <div class="token-header">
+                                <span><i class="fa-solid fa-key"></i> JWT Bearer Token:</span>
+                                <button id="copy-token-btn" class="copy-btn"><i class="fa-regular fa-copy"></i> Nusxalash</button>
+                            </div>
+                            <code id="prof-token">eyJhbGciOi...</code>
+                        </div>
+
+                        <button id="profile-logout-btn" class="btn btn-outline-danger btn-block">
+                            <i class="fa-solid fa-right-from-bracket"></i> Tizimdan chiqish
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: BAZA ================= -->
+        <section id="users-tab" class="tab-content">
+            <div class="section-toolbar">
+                <div class="toolbar-left">
+                    <h2><i class="fa-solid fa-users"></i> Foydalanuvchilar Bazasi</h2>
+                    <p class="subtitle">MongoDB <code>users</code> kolleksiyasidagi foydalanuvchilar (MongoDB Compass bilan sinxron)</p>
+                </div>
+                <div class="toolbar-right">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="users-search-input" placeholder="Ism, username yoki viloyat bo'yicha...">
+                    </div>
+                    <select id="users-filter-gender" class="filter-select">
+                        <option value="ALL">Barcha jinslar</option>
+                        <option value="Erkak">Erkaklar</option>
+                        <option value="Ayol">Ayollar</option>
+                    </select>
+                    <button id="btn-open-create-user" class="btn btn-primary" style="white-space: nowrap;">
+                        <i class="fa-solid fa-user-plus"></i> Yangi User Qo‘shish
+                    </button>
+                </div>
+            </div>
+
+            <!-- Users Grid -->
+            <div class="users-grid" id="users-grid-container">
+                <!-- User kartalari JS orqali joylashtiriladi -->
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: MONGODB COMPASS LOGS ================= -->
+        <section id="logs-tab" class="tab-content">
+            <div class="section-toolbar">
+                <div class="toolbar-left">
+                    <h2><i class="fa-solid fa-shield-halved"></i> MongoDB Compass Login Qaydlari</h2>
+                    <p class="subtitle">
+                        Ushbu jadval MongoDB'dagi <code>logins</code> kolleksiyasi bilan sinxron ishlaydi. 
+                        MongoDB Compass dasturida to'g'ridan-to'g'ri ko'rinadi!
+                    </p>
+                </div>
+                <div class="toolbar-right">
+                    <button id="refresh-logs-btn" class="btn btn-outline">
+                        <i class="fa-solid fa-rotate-right"></i> Qayta yangilash
+                    </button>
+                </div>
+            </div>
+
+            <div class="card table-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Vaqt (Toshkent)</th>
+                                <th>Foydalanuvchi</th>
+                                <th>To‘liq ism</th>
+                                <th>Holat</th>
+                                <th>IP Manzil</th>
+                                <th>Qurilma / User-Agent</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-table-body">
+                            <tr>
+                                <td colspan="7" class="text-center py-4">Login qaydlari yuklanmoqda...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: MONGODB INTEGRATSIYA ================= -->
+        <section id="guide-tab" class="tab-content">
+            <div class="guide-grid">
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon-circle icon-circle-green">
+                            <i class="fa-solid fa-leaf"></i>
+                        </div>
+                        <h2>MongoDB Compass'ga Ulanish Yo'riqnomasi</h2>
+                        <p class="subtitle">Kolleksiyalarni MongoDB Compass dasturida ko'rish tartibi</p>
+                    </div>
+
+                    <div class="guide-step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <h4>MongoDB Compass dasturini oching</h4>
+                            <p>Ish stolingizdagi <strong>MongoDB Compass</strong> belgisini oching.</p>
+                        </div>
+                    </div>
+
+                    <div class="guide-step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <h4>Ulanish matnini kiriting</h4>
+                            <p>Compass'dagi "New Connection" maydoniga ushbu MongoDB Atlas URI ni qo‘ying va "Connect" tugmasini bosing:</p>
+                            <div class="code-snippet">
+                                <code id="compass-uri">mongodb+srv://azifay9_db_user:mango001@cluster0.6mver6d.mongodb.net/</code>
+                                <button class="copy-btn-code" onclick="navigator.clipboard.writeText('mongodb+srv://azifay9_db_user:mango001@cluster0.6mver6d.mongodb.net/')">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guide-step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <h4>Kolleksiyalarni tekshiring</h4>
+                            <p>Compass'da <strong>log_database</strong> nomli baza ochiladi. Unda 2 ta kolleksiya bor:</p>
+                            <ul class="guide-list">
+                                <li><strong>users</strong> — Barcha foydalanuvchilar (ism, pasport, telefon, yosh). Yangi qo‘shilgan, o‘zgartirilgan va o‘chirilgan userlar bu yerda real vaqtda yangilanadi!</li>
+                                <li><strong>logins</strong> — Saytda qilingan har bir login va ro‘yxatdan o‘tish audit tarixi (vaqt, IP, status, qurilma).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon-circle icon-circle-blue">
+                            <i class="fa-solid fa-gear"></i>
+                        </div>
+                        <h2>Loyiha .env Sozlamalari</h2>
+                        <p class="subtitle">Server MongoDB bilan to'liq sinxron ishlashi uchun</p>
+                    </div>
+
+                    <p class="text-muted">
+                        Loyihangizdagi faol <code>.env</code> fayli:
+                    </p>
+
+                    <div class="code-block">
+                        <pre>PORT=4040
+JWT_SECRET=supersecretkey_jwt_swagger_2026
+MONGO_URI=mongodb+srv://azifay9_db_user:mango001@cluster0.6mver6d.mongodb.net/log_database?retryWrites=true&w=majority</pre>
+                    </div>
+
+                    <div class="tip-box">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <div>
+                            <strong>MongoDB Atlas Holati:</strong> MongoDB Atlas klasteriga ulanish to‘liq sozlangan. Yangi foydalanuvchi qo‘shilganda, tahrirlanganda yoki o‘chirilganda darhol Atlas Compass'da o‘zgarishlar ko‘rinadi.
+                        </div>
+                    </div>
+
+                    <div class="swagger-box mt-4">
+                        <h4><i class="fa-solid fa-book-bookmark"></i> Swagger API Documentation</h4>
+                        <p>API endpointlarni test qilish uchun Swagger sahifasiga o'tishingiz mumkin:</p>
+                        <a href="/api-docs" target="_blank" class="btn btn-outline btn-block">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> /api-docs ochish
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL: USER DETAILS -->
+    <div id="user-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <button class="modal-close" id="modal-close-btn">&times;</button>
+            <div class="modal-header">
+                <div class="modal-avatar" id="m-avatar">A</div>
+                <div>
+                    <h3 id="m-fullname">Ali Valiyev</h3>
+                    <span class="modal-user-tag" id="m-username">@ali_uz</span>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <!-- Pasport -->
+                <div class="modal-section-title"><i class="fa-solid fa-passport"></i> Pasport Ma'lumotlari</div>
+                <div class="m-grid-2">
+                    <div class="m-info-box">
+                        <span class="m-lbl">Seriya va Raqami</span>
+                        <span class="m-val" id="m-passport-full">AA 1029384</span>
+                    </div>
+                    <div class="m-info-box">
+                        <span class="m-lbl">Berilgan sana</span>
+                        <span class="m-val" id="m-passport-date">2022-05-20</span>
+                    </div>
+                    <div class="m-info-box full-col">
+                        <span class="m-lbl">Kim tomonidan berilgan</span>
+                        <span class="m-val" id="m-passport-by">Toshkent shahar Chilonzor IIB</span>
+                    </div>
+                </div>
+
+                <!-- Shaxsiy -->
+                <div class="modal-section-title"><i class="fa-solid fa-user"></i> Shaxsiy Ma'lumotlar</div>
+                <div class="m-grid-3">
+                    <div class="m-info-box">
+                        <span class="m-lbl">Otasining ismi</span>
+                        <span class="m-val" id="m-middle">-</span>
+                    </div>
+                    <div class="m-info-box">
+                        <span class="m-lbl">Tug‘ilgan sana</span>
+                        <span class="m-val" id="m-birth">-</span>
+                    </div>
+                    <div class="m-info-box">
+                        <span class="m-lbl">Yoshi / Jinsi</span>
+                        <span class="m-val" id="m-age-gender">-</span>
+                    </div>
+                </div>
+
+                <!-- Aloqa & Manzil -->
+                <div class="modal-section-title"><i class="fa-solid fa-map-location-dot"></i> Aloqa & Yashash Joyi</div>
+                <div class="m-grid-2">
+                    <div class="m-info-box">
+                        <span class="m-lbl">Telefon</span>
+                        <span class="m-val" id="m-phone">-</span>
+                    </div>
+                    <div class="m-info-box">
+                        <span class="m-lbl">Email</span>
+                        <span class="m-val" id="m-email">-</span>
+                    </div>
+                    <div class="m-info-box full-col">
+                        <span class="m-lbl">Hudud</span>
+                        <span class="m-val" id="m-region-district">-</span>
+                    </div>
+                    <div class="m-info-box full-col">
+                        <span class="m-lbl">Aniq Manzil</span>
+                        <span class="m-val" id="m-address">-</span>
+                    </div>
+                </div>
+
+                <!-- Tizim -->
+                <div class="modal-section-title"><i class="fa-solid fa-clock"></i> Tizim Ma'lumotlari</div>
+                <div class="m-grid-2">
+                    <div class="m-info-box">
+                        <span class="m-lbl">Ro‘yxatdan o‘tgan sana</span>
+                        <span class="m-val" id="m-registered">-</span>
+                    </div>
+                    <div class="m-info-box">
+                        <span class="m-lbl">Tizim ID</span>
+                        <span class="m-val" id="m-id">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="gap: 10px; display: flex; flex-wrap: wrap;">
+                <button class="btn btn-danger" id="modal-delete-user-btn" style="margin-right: auto;">
+                    <i class="fa-solid fa-trash-can"></i> O‘chirish
+                </button>
+                <button class="btn btn-warning" id="modal-edit-user-btn">
+                    <i class="fa-solid fa-pen-to-square"></i> O‘zgartirish
+                </button>
+                <button class="btn btn-primary" id="modal-quick-login-btn">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Ushbu user bilan kirish
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT / CREATE USER -->
+    <div id="edit-user-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <button class="modal-close" id="edit-modal-close-btn">&times;</button>
+            <div class="modal-header">
+                <div class="modal-avatar" id="edit-modal-avatar"><i class="fa-solid fa-user-pen"></i></div>
+                <div>
+                    <h3 id="edit-modal-title">Foydalanuvchini O‘zgartirish</h3>
+                    <span class="modal-user-tag" id="edit-modal-subtitle">MongoDB Atlas bazasida yangilanadi</span>
+                </div>
+            </div>
+
+            <form id="edit-user-form">
+                <input type="hidden" id="edit-user-id">
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="edit-username"><i class="fa-regular fa-user"></i> Username *</label>
+                        <input type="text" id="edit-username" required placeholder="Masalan: jasur_dev">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-password"><i class="fa-solid fa-key"></i> Parol <small>(o‘zgartirmaslik uchun bo‘sh qoldiring)</small></label>
+                        <input type="password" id="edit-password" placeholder="Yangi parol">
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="edit-firstname"><i class="fa-solid fa-signature"></i> Ism</label>
+                        <input type="text" id="edit-firstname" placeholder="Masalan: Jasur">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-lastname"><i class="fa-solid fa-signature"></i> Familiya</label>
+                        <input type="text" id="edit-lastname" placeholder="Masalan: Rashidov">
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="edit-middlename"><i class="fa-solid fa-user-tag"></i> Otasining ismi</label>
+                        <input type="text" id="edit-middlename" placeholder="Masalan: Rustam o‘g‘li">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-phone"><i class="fa-solid fa-phone"></i> Telefon</label>
+                        <input type="text" id="edit-phone" placeholder="+998 90 123 45 67">
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="edit-email"><i class="fa-solid fa-envelope"></i> Email</label>
+                        <input type="email" id="edit-email" placeholder="user@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-age"><i class="fa-solid fa-cake-candles"></i> Yoshi</label>
+                        <input type="number" id="edit-age" min="1" max="120" placeholder="25">
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="edit-gender"><i class="fa-solid fa-venus-mars"></i> Jinsi</label>
+                        <select id="edit-gender" class="filter-select" style="width: 100%; height: 44px;">
+                            <option value="Erkak">Erkak</option>
+                            <option value="Ayol">Ayol</option>
+                        </select>
+                    </div>
+                    <div></div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="edit-region"><i class="fa-solid fa-location-dot"></i> Viloyat / Shahar</label>
+                        <input type="text" id="edit-region" placeholder="Toshkent shahri">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-district"><i class="fa-solid fa-location-crosshairs"></i> Tuman</label>
+                        <input type="text" id="edit-district" placeholder="Chilonzor tumani">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-address"><i class="fa-solid fa-house"></i> Aniq yashash manzili</label>
+                    <input type="text" id="edit-address" placeholder="Bunyodkor shoh ko‘chasi, 12-uy">
+                </div>
+
+                <div class="modal-section-title"><i class="fa-solid fa-passport"></i> Pasport Ma'lumotlari</div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="edit-passport-series"><i class="fa-solid fa-id-card"></i> Seriya</label>
+                        <input type="text" id="edit-passport-series" placeholder="AA" maxlength="2" style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-passport-number"><i class="fa-solid fa-hashtag"></i> Raqami</label>
+                        <input type="text" id="edit-passport-number" placeholder="1234567" maxlength="7">
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="edit-passport-by"><i class="fa-solid fa-building-shield"></i> Berilgan joyi</label>
+                        <input type="text" id="edit-passport-by" placeholder="Toshkent shahar Chilonzor IIB">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-passport-date"><i class="fa-regular fa-calendar"></i> Berilgan sana</label>
+                        <input type="date" id="edit-passport-date">
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="gap: 10px;">
+                    <button type="button" class="btn btn-secondary" id="edit-modal-cancel-btn">Bekor qilish</button>
+                    <button type="submit" class="btn btn-primary" id="edit-modal-submit-btn">
+                        <i class="fa-solid fa-floppy-disk"></i> Saqlash (MongoDB Atlas)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
